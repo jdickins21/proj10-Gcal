@@ -1,0 +1,6 @@
+# 
+# Target-specific paths for Makefile
+#
+
+PYVENV = /Library/Frameworks/Python.framework/Versions/3.3/bin/pyvenv 
+

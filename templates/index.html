@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html lang="en"> <head>
+<title>Appointments</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" type="text/css"
+     href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"
+/>
+
+
+<link rel="stylesheet" type="text/css"
+    href="/static/css/busy.css"
+/>
+
+<!-- jquery from a content distribution network; probably cached -->
+<script type="text/javascript"
+     src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-timepicker/1.10.0/jquery.timepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-timepicker/1.10.0/jquery.timepicker.min.css" />
+
+<script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+
+<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+
+
+</head>
+
+<body>
+<div class="container">
+
+<h1>Meeting Schedule</h1>
+
+<!--
+  -- If there are any warnings or other messages from a prior action,
+  -- they appear above the rest of the content, just until the next 
+  -- action.
+  -->
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+<form class="form-horizontal" action="/setrange" method="post" onsubmit="return validateForm()">
+<p><b><u>Proposer's Name</u></b></p>
+<div class="row">
+    <div class="col-md-3">
+        <p>Please enter your name:</p>
+    </div>
+    <div class="col-md-3">
+        <input type="text" name="name" {% if session.name is defined %} value="{{session.name}}" {% endif %}/>
+    </div>
+</div>
+
+<p><b><u>Date And Time Range</u></b></p>
+  <div class="control-group">
+    <div class="controls">
+      <label class="control-label" for="daterange">Date Range</label>
+      <input type="text" name="daterange"
+        {% if session.daterange is defined %}
+             value="{{session.daterange}}"
+        {% endif %}
+        class="pull-down">
+    </div>
+  </div>
+  <div class="control-group">
+    <div class="controls">
+      <label class="control-label" for="starttime">Start Time</label>
+      <input name="starttime" type="text" value="9:00am">
+    </div>
+  </div>
+  <div class="control-group">
+    <div class="controls">
+      <label class="control-label" for="endtime">End Time</label>
+      <input name="endtime" type="text" value="5:00pm">
+    </div>
+  </div>
+
+<script type="text/javascript">
+    $(function() {
+      $('input[name*="time"]').timepicker(
+      { 'scrollDefault': 'now', 
+        'orientation': 'br',
+        'step': 15 });
+      $('input[name="daterange"]').daterangepicker(
+      {   ranges: {
+             'Today': [moment(), moment()],
+             'Tomorrow':[moment().add(1, 'days'),
+                         moment().add(1, 'days')], 
+             'This week':[moment(), moment().endOf('week')],
+             'Next week':[moment().add(7, 'days').startOf('week'),
+                          moment().add(7, 'days').endOf('week')],
+             'This month':[moment(), moment().endOf('month')],
+             'Within two weeks':[moment(),moment().add(15, 'days')]
+          }}
+       );
+    });
+</script>
+
+<br /><input type="submit" value="Choose" />
+</form>
+
+{% if session.calendars is defined  %}
+<h2>Please Select The Calendars To Be Used</h2>
+  <div class="row">
+  {% for cal in session.calendars if cal.selected %}
+          <div class="col-md-4">
+     <input id="{{cal.id}}" type="checkbox" {% if cal.id in session.selected_cal|safe %} checked {% endif %} > {{ cal.summary }}
+          </div>
+         {% if loop.index is divisibleby 3 %}
+          </div> <div class="row">
+         {% endif %}
+  {% endfor %}
+  </div>
+
+
+<button onclick="calc_busy_free()">Calculate Busy Times</button>
+
+{% endif %}
+
+
+{% if session.display_free_busy is defined %}
+<p></p>
+<p><b><u>Elimination Of Candidate Meeting Times</u></b></p>
+<p>Please select the times out of the "available" times in which you are available:</p>
+    {% for apt_dict in session.display_free_busy %}
+        {% if apt_dict.desc == "Available" %}
+        <div class="row">
+            <div class="col-md-6">  
+                <input id="{{apt_dict.id}}" name="check2" type="checkbox" {%if session.selected_candidates is not defined %} checked {% elif apt_dict.id in session.selected_candidates|safe %} checked {% endif %} > {{ apt_dict.display }}
+            </div>
+        </div>
+        {% else %}
+        <div class="row">
+            <div class="col-md-6">  
+                {{ apt_dict.display }}
+            </div>
+        </div>
+        {% endif %}  
+    {% endfor %}
+    
+<button onclick="eliminate_candidate()">Submit</button>
+{% endif %}
+
+{% if session.display_revised_free is defined %}
+<p></p>
+<p><b><u>Finished</u></b></p>
+<p>Your Finalized Available Meeting Times:</p>
+    {% for apt in session.display_revised_free %}
+    <div class="row">
+        <div class="col-md-4">  
+            {{ apt.display }}
+        </div>
+    </div>
+    {% endfor %}
+<br>
+<p>Your finalized available meeting times have been successfully submitted.</p>
+<p>Please copy and paste the following URL into an email and send it to the people<br>
+whom you want at the meeting so that their available times can be collected as well:<br>
+{{session.participant_url}} <br>
+<p>To view the current status of the meeting, go to the provided URL and click the<br>
+"View Current Meeting Status" button. Thank You!</p>
+{% endif %}
+
+<script>
+
+$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
+function calc_busy_free(){
+    selected_cal = [];
+    $('input[type=checkbox]').each(function () {
+       if (this.checked)
+       {
+            console.log(this.id);
+            selected_cal.push(this.id)
+       }
+  });
+  
+    $.ajax({
+    dataType: "json",
+    url: $SCRIPT_ROOT + '/calc_busy_free',
+    data: {calender: selected_cal},
+    complete: function(){ 
+            location.assign($SCRIPT_ROOT + '/show_sched'); }
+    });
+
+
+function eliminate_candidate(){
+    selected_candid = [];
+    $('input[name=check2]').each(function () {
+       if (this.checked)
+       {
+            console.log(this.id);
+            selected_candid.push(this.id)
+       }
+  });
+  
+  console.log(selected_candid);
+  
+    $.ajax({
+    dataType: "json",
+    url: $SCRIPT_ROOT + '/eliminate_candidate',
+    data: {selected: selected_candid},
+    complete: function(){ 
+            location.assign($SCRIPT_ROOT + '/proposer_finish'); }
+    });
+
+}
+
+</script>
+    
+
+  </div>  <!-- container (for bootstrap) -->
+  </body> </html>

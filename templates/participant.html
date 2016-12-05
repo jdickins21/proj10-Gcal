@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html lang="en"> <head>
+<title>Appointments</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<!-- jquery from a content distribution network; probably cached -->
+<script type="text/javascript"
+     src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
+</script>
+    
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet"
+ href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+ integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+  crossorigin="anonymous">
+<script
+src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
+integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
+crossorigin="anonymous">
+</script>
+    
+<link rel="stylesheet" type="text/css"
+     href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"
+/>
+    
+
+<link rel="stylesheet" type="text/css"
+    href="/static/css/busy.css"
+/>
+
+
+
+</head>
+
+<body>
+<div class="container">
+
+<h1>Meeting Scheduler</h1>
+<button onclick="status()">View Current Meeting Status</button>
+
+
+<form action="/setParticName" method="post">
+<br>
+<p><b><u>Participant's Name</u></b></p>
+<div class="row">
+    <div class="col-md-3">
+        <p>Enter your name:</p>
+    </div>
+    <div class="col-md-3">
+        <input type="text" name="name" {% if session.name is defined %} value="{{session.name}}" {% endif %}/>
+    </div>
+</div>
+
+<br /><input type="submit" value="Continue To Choose Calendars" />
+</form>
+
+
+
+
+{% if session.calendars is defined  %}
+<p></p>
+<p><b><u>Calendars</u></b></p>
+<p>Select calendars to be used:</p>
+  <div class="col">
+  {% for cal in session.calendars if cal.selected %}
+          <div class="row-md-4">
+     <input id="{{cal.id}}" name="check1" type="checkbox" {% if cal.id in session.selected_cal|safe %} checked {% endif %} > {{ cal.summary }}
+          </div>
+         {% if loop.index is divisibleby 3 %}
+          </div> <div class="col">
+         {% endif %}
+  {% endfor %}
+  </div>
+<button onclick="calc_busy_free()">Calculate Busy & Free Times</button>
+{% endif %}
+
+
+
+{% if session.display_free_busy is defined %}
+<p></p>
+<p><b><u>Optional Elimination of Candidate Meeting Times</u></b></p>
+<p>Select times out of the "available" times in which you are available:</p>
+    {% for apt_dict in session.display_free_busy %}
+        {% if apt_dict.desc == "Available" %}
+        <div class="row">
+            <div class="col-md-6">  
+                <input id="{{apt_dict.id}}" name="check2" type="checkbox" {%if session.selected_candidates is not defined %} checked {% elif apt_dict.id in session.selected_candidates|safe %} checked {% endif %} > {{ apt_dict.display }}
+            </div>
+        </div>
+        {% else %}
+        <div class="row">
+            <div class="col-md-6">  
+                {{ apt_dict.display }}
+            </div>
+        </div>
+        {% endif %}  
+    {% endfor %}
+    
+<button onclick="eliminate_candidate()">Submit</button>
+{% endif %}
+
+
+{% if session.display_revised_free is defined %}
+<p></p>
+<p><b><u>Finished</u></b></p>
+<p>Finalized Available Meeting Times:</p>
+    {% for apt in session.display_revised_free %}
+    <div class="row">
+        <div class="col-md-4">  
+            {{ apt.display }}
+        </div>
+    </div>
+    {% endfor %}
+<br>
+<p>Your finalized available meeting times have been successfully submitted.</p>
+<p>You can view the current status of the meeting and the responders so far by <br>
+by clicking the "View Current Meeting Status" button above. Thank You!</p>
+{% endif %}
+
+    
+
+  </div>  <!-- container (for bootstrap) -->
+  
+  
+<script>
+$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
+
+function calc_busy_free(){
+    selected_cal = [];
+    $('input[name=check1]').each(function () {
+       if (this.checked)
+       {
+            console.log(this.id);
+            selected_cal.push(this.id)
+       }
+  });
+  
+  console.log(selected_cal);
+  
+    $.ajax({
+    dataType: "json",
+    url: $SCRIPT_ROOT + '/calc_busy_free',
+    data: {calender: selected_cal},
+    complete: function(){ 
+            location.assign($SCRIPT_ROOT + '/show_sched'); }
+    });
+}
+
+
+
+function eliminate_candidate(){
+    selected_candid = [];
+    $('input[name=check2]').each(function () {
+       if (this.checked)
+       {
+            console.log(this.id);
+            selected_candid.push(this.id)
+       }
+  });
+  
+  console.log(selected_candid);
+  
+    $.ajax({
+    dataType: "json",
+    url: $SCRIPT_ROOT + '/eliminate_candidate',
+    data: {selected: selected_candid},
+    complete: function(){ 
+            location.assign($SCRIPT_ROOT + '/participant_finish'); }
+    });
+}
+
+function status(){
+    location.assign($SCRIPT_ROOT + '/status');
+}
+
+
+</script>
+
+  </body> </html>
