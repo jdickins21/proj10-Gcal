@@ -1,5 +1,0 @@
-author = "Jacob Dickinson"
-db_user = "jacob"
-db_user_pw = "updog"
-db = "apt_maker"
-repo = "https://github.com/jdickins21/proj7-Gcal" 
