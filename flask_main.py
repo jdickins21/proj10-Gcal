@@ -53,7 +53,6 @@ try:
 
 except:
     print("Failure opening database.  Is Mongo running? Correct password?")
-    sys.exit(1)
 
 SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
 CLIENT_SECRET_FILE = secrets.admin_secrets.google_key_file  ## You'll need this
