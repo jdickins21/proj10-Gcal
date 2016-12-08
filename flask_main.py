@@ -20,6 +20,17 @@ import httplib2   # used in oauth2 flow
 # Google API for services 
 from apiclient import discovery
 
+# Mongo database
+from pymongo import MongoClient
+import secrets.admin_secrets
+import secrets.client_secrets
+
+MONGO_CLIENT_URL = "mongodb://{}:{}@localhost:{}/{}".format(
+    secrets.client_secrets.db_user,
+    secrets.client_secrets.db_user_pw,
+    secrets.admin_secrets.port, 
+    secrets.client_secrets.db)
+
 ###
 # Globals
 ###
@@ -35,24 +46,14 @@ app.debug=CONFIG.DEBUG
 app.logger.setLevel(logging.DEBUG)
 app.secret_key=CONFIG.secret_key
 
-# Mongo database
-from pymongo import MongoClient
-import secrets.admin_secrets
-import secrets.client_secrets
-
-MONGO_CLIENT_URL = "mongodb://{}:{}@localhost:{}/{}".format(
-    secrets.client_secrets.db_user,
-    secrets.client_secrets.db_user_pw,
-    secrets.admin_secrets.port, 
-    secrets.client_secrets.db)
-
 try: 
-    dbclient = MongoClient(CONFIG.MONGO_URL)
-    db = dbclient.meetme 
+    dbclient = MongoClient(MONGO_CLIENT_URL)
+    db = getattr(dbclient, secrets.client_secrets.db)
     collection = db.meet 
 
 except:
     print("Failure opening database.  Is Mongo running? Correct password?")
+    sys.exit(1)
 
 SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
 CLIENT_SECRET_FILE = secrets.admin_secrets.google_key_file  ## You'll need this
