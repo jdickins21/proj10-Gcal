@@ -46,6 +46,15 @@ MONGO_CLIENT_URL = "mongodb://{}:{}@localhost:{}/{}".format(
     secrets.admin_secrets.port, 
     secrets.client_secrets.db)
 
+try: 
+    dbclient = MongoClient(CONFIG.MONGO_URL)
+    db = dbclient.meetme 
+    collection = db.meet 
+
+except:
+    print("Failure opening database.  Is Mongo running? Correct password?")
+    sys.exit(1)
+
 SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
 CLIENT_SECRET_FILE = secrets.admin_secrets.google_key_file  ## You'll need this
 APPLICATION_NAME = 'Final class project'
@@ -218,12 +227,6 @@ def setrange():
 
 @app.route('/eliminate_candidate')  
 def eliminate_candidate():
-  """
-  The user has checked the "available" times in which he can meet 
-  and has pressed "submit". We obtain a revised free list by going 
-  through the current free_list and only keeping the available times
-  which the user has checked. 
-  """
   selected_candidates = request.args.getlist("selected[]")
   flask.session['selected_candidates'] = selected_candidates
   delete_candidate() #now we have revised_free
@@ -249,12 +252,6 @@ def proposer_finish():
 
 @app.route('/status')
 def status():
-    """
-    Take the intersected free times
-    amongst all the people who have currently responded, and the names of all the 
-    people who have currently responded from the database. Finally we render
-    template status.html.
-    """
     create_display_meetinginfo()
     create_display_intersected_times()
     create_display_responders()
@@ -339,11 +336,6 @@ def next_day(isotext):
 ####
 
 def create_display_intersected_times():
-  """
-  This function stores, in the session object, a nice 
-  displayable list of the intersected free times amongst 
-  all the current responders. 
-  """
   for record in collection.find({ "type": "proposal", "_id": flask.session['proposal_id'] }):
       free_times = record['free_times']
   begin_date = arrow.get(flask.session['begin_date'])
@@ -358,20 +350,11 @@ def create_display_intersected_times():
   flask.session['display_intersected'] = create_display_aptlist(total_list)
 
 def create_display_responders():
-  """
-  This function stores, in the session object, a displayable list 
-  of the names of all the current responders of this proposal. 
-  """
   for record in collection.find({ "type": "proposal", "_id": flask.session['proposal_id'] }):
       responders = record['responders']
   flask.session['display_responders'] = responders
     
 def create_display_meetinginfo():
-  """
-  This function stores, in the session object, a string containing 
-  the date range of the meeting and a string containing the time 
-  range of the proposed meeting. 
-  """
   begin_date = arrow.get(flask.session['begin_date']).to('local')
   begin_date = begin_date.format('MM/DD/YYYY')
   end_date = arrow.get(flask.session['end_date']).to('local')
@@ -387,15 +370,6 @@ def create_display_meetinginfo():
 
 
 def create_display_aptlist(apt_list):
-  """
-  This function takes in a list of appointments and returns a list of strings representing
-  the appointments, where the strings are suited for displaying. 
-  Arguments:
-      apt_list: a list of dictionaries either in the format of busy_list or in 
-                the format of free_list 
-                (see above for a detailed description of the format of busy_list and free_list)
-  Returns: a list of strings representing appointments. 
-  """
   display_apt_list = [] #list of dicts
   for apt in apt_list:
       info = {}
@@ -412,13 +386,6 @@ def create_display_aptlist(apt_list):
   return display_apt_list
   
 def list_calendars(service):
-  """
-  Given a google 'service' object, return a list of
-  calendars.  Each calendar is represented by a dict.
-  The returned list is sorted to have
-  the primary calendar first, and selected (that is, displayed in
-  Google Calendars web app) calendars before unselected calendars.
-  """
   app.logger.debug("Entering list_calendars")  
   calendar_list = service.calendarList().list().execute()["items"]
   result = [ ]
@@ -446,11 +413,6 @@ def list_calendars(service):
 
 
 def cal_sort_key( cal ):
-  """
-  Sort key for the list of calendars:  primary calendar first,
-  then other selected calendars, then unselected calendars.
-  (" " sorts before "X", and tuples are compared piecewise)
-  """
   if cal["selected"]:
      selected_key = " "
   else:
@@ -530,11 +492,6 @@ def find_free():
   flask.session['free_list'] = free_agenda.to_list()
 
 def delete_candidate():
-  """
-  This function creates a revised list of free times which contains only the free
-  times with an id that is in flask.session['selected_candidates']. The revised
-  list of free times is stored in flask.session['revised_free']. 
-  """
   to_keep = flask.session['selected_candidates']
   revised_free = []
   for apt in flask.session['free_list']:
@@ -544,21 +501,10 @@ def delete_candidate():
   flask.session['revised_free'] = revised_free
 
 def store_participant():
-  """
-  This function stores the participant's name and the participant's free times 
-  in the database. 
-  """
   collection.update({ "type": "proposal", "_id":flask.session['proposal_id'] }, {'$push': {'responders':flask.session['name']}})
   collection.update({ "type": "proposal", "_id":flask.session['proposal_id'] }, {'$push': {'free_times':flask.session['revised_free']}})
     
 def store_proposer():
-  """
-  This function creates a random id to serve as the proposal id. 
-  It then stores this proposal id, proposed meeting's start date, end date, 
-  start time, end time, proposer's name, and proposer's free times in the database, 
-  all in one record.
-  """
-  #collection.remove({})
   responders = []
   responders.append(flask.session['name'])
   free_times = []
@@ -577,9 +523,6 @@ def store_proposer():
   collection.insert(record) 
 
 def overlap(event_sdt, event_edt):
-
-#sdt = start date time 
-#edt = end date time 
   event_sd = event_sdt.date()
   event_ed = event_edt.date()
   event_st = event_sdt.time()
