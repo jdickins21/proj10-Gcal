@@ -113,7 +113,7 @@
   <div class="row">
   {% for cal in session.calendars if cal.selected %}
           <div class="col-md-4">
-     <input type="checkbox" id="{{cal.id}}" {% if cal.id in session.selected_cal|safe %} checked {% endif %} > {{ cal.summary }}
+     <input id="{{cal.id}}" name="check1" type="checkbox" {% if cal.id in session.selected_cal|safe %} checked {% endif %} > {{ cal.summary }}
           </div>
          {% if loop.index is divisibleby 3 %}
           </div> <div class="row">
@@ -176,7 +176,7 @@ $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
 function calc_busy_free(){
     selected_cal = [];
-    $('input[type=checkbox]').each(function () {
+    $('input[name=check1]').each(function () {
        if (this.checked)
        {
             console.log(this.id);
