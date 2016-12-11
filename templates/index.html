@@ -175,44 +175,44 @@ whom you want at the meeting so that their available times can be collected as w
 $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
 function calc_busy_free(){
-    selected_cal = [];
-    $('input[name=check1]').each(function () {
-       if (this.checked)
-       {
-            console.log(this.id);
-            selected_cal.push(this.id)
-       }
+  selected_cal = [];
+  $('input[name=check1]').each(function () {
+     if (this.checked)
+   {
+      console.log(this.id);
+      selected_cal.push(this.id)
+   }
   });
-  
-    $.ajax({
-    dataType: "json",
-    url: $SCRIPT_ROOT + '/calc_busy_free',
-    data: {calender: selected_cal},
-    complete: function(){ 
-            location.assign($SCRIPT_ROOT + '/show_sched'); }
-    });
+
+  $.ajax({
+  dataType: "json",
+  url: $SCRIPT_ROOT + '/calc_busy_free',
+  data: {calender: selected_cal},
+  complete: function(){ 
+    location.assign($SCRIPT_ROOT + '/show_sched'); }
+  });
+}
 
 
 function eliminate_candidate(){
-    selected_candid = [];
-    $('input[name=check2]').each(function () {
-       if (this.checked)
-       {
-            console.log(this.id);
-            selected_candid.push(this.id)
-       }
+  selected_candid = [];
+  $('input[name=check2]').each(function () {
+   if (this.checked)
+   {
+      console.log(this.id);
+      selected_candid.push(this.id)
+   }
   });
-  
-  console.log(selected_candid);
-  
-    $.ajax({
-    dataType: "json",
-    url: $SCRIPT_ROOT + '/eliminate_candidate',
-    data: {selected: selected_candid},
-    complete: function(){ 
-            location.assign($SCRIPT_ROOT + '/proposer_finish'); }
-    });
 
+  console.log(selected_candid);
+
+  $.ajax({
+  dataType: "json",
+  url: $SCRIPT_ROOT + '/eliminate_candidate',
+  data: {selected: selected_candid},
+  complete: function(){ 
+    location.assign($SCRIPT_ROOT + '/proposer_finish'); }
+  });
 }
 
 </script>

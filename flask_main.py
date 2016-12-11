@@ -442,9 +442,9 @@ def calc_busy_free():
   calender_list = request.args.getlist('calender[]')
   flask.session['calender_list'] = calender_list
 
-  find_free()
   find_busy()
-
+  find_free()
+  
 def find_busy():
   
   #credentials
