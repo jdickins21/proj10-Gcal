@@ -33,6 +33,9 @@
 
 <h1>Meeting Schedule</h1>
 
+<button onclick="calc_busy_free()">Calculate Busy Times</button>
+
+
 <!--
   -- If there are any warnings or other messages from a prior action,
   -- they appear above the rest of the content, just until the next 
@@ -188,8 +191,6 @@ function calc_busy_free(){
   dataType: "json",
   url: $SCRIPT_ROOT + '/calc_busy_free',
   data: {calender: selected_cal},
-  complete: function(){ 
-    location.assign($SCRIPT_ROOT + '/show_sched'); }
   });
 }
 

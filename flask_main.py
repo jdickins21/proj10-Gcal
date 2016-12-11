@@ -444,6 +444,7 @@ def calc_busy_free():
 
   find_busy()
   find_free()
+  show_sched()
   
 def find_busy():
   
@@ -452,6 +453,7 @@ def find_busy():
   service = get_gcal_service(credentials)
 
   busy_times = [] 
+  flask.session['busy_list'] = []
   credentials = client.OAuth2Credentials.from_json(flask.session['credentials'])
   service = get_gcal_service(credentials)
   for id in flask.session['calender_list']:
